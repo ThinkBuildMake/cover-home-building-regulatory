@@ -18,7 +18,7 @@ These items came up while defining the user but describe how the product is buil
 | Chat follow-up, setback geometry, admin pipeline view (bonus) | UC-2 |
 
 ## Time budget
-- The brief says "real-time" and gives no number; the target is set in requirements after the meeting (UC-1, UC-2).
+- The brief says "real-time" and gives no number; the target is set in requirements; assumed about ten seconds (A-4) (UC-1, UC-2).
 
 ## Scope boundaries with their design reasons
 - Subset of rules over full coverage: the brief prioritizes clarity and traceability over completeness; the rule model must scale to LA County, other California jurisdictions and beyond (UC-1).
