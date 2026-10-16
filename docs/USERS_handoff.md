@@ -24,7 +24,7 @@ These items came up while defining the user but describe how the product is buil
 - Subset of rules over full coverage: the brief prioritizes clarity and traceability over completeness; the rule model must scale to LA County, other California jurisdictions and beyond (UC-1).
 - Mock data allowed "if needed": the architecture must make it clear which data is real and which is mock.
 
-## Open questions for the audit / research step
+## Open questions for the audit / research step (assumptions A-1 to A-11 are in USERS.md Section 10)
 - Which public datasets exist for LA City parcels, zoning and existing buildings, and how current are they? (the extra resources promised in the brief have not arrived)
 - How much of the relevant regulation is numeric tables versus prose? This decides how much the LLM synthesis is needed (UC-1).
 - Whether ZIMAS or other city sources can be queried programmatically.

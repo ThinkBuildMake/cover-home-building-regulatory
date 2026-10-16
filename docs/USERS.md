@@ -6,15 +6,15 @@
 
 **This document does not cover:** how the product is built, verified, measured or hosted. Requirements, key metrics, stack and architecture are separate documents that trace back to the use case IDs (UC-n) and the constraints here.
 
-**Status:** Provisional draft, written from the Portal PRD and the Cover brief (`docs/Cover - Home Building Regulatory Engine.pdf`) only. The builder (Michael) has no firsthand knowledge of how Cover's architects work today, so everything about their day is marked *(guess)*. Starred items in `MEETING_QUESTIONS.md` are open.
+**Status:** Draft on stated assumptions. Written from the Portal PRD and the Cover brief (`docs/Cover - Home Building Regulatory Engine.pdf`) only. No meeting with Cover will happen and the builder has no firsthand knowledge of how Cover's architects work, so everything about their day is the builder's best guess. Each guess is marked **[A-n]** and listed in Section 10 with what would change if it is wrong.
 
 ---
 
 ## 1. Target user
 
-**A Cover design architect (or engineer) who knows the zoning code and building regulations, working on a residential lot in the City of Los Angeles at the start of, and during, a project.** The brief names the initial target user as "an Architect or Engineer with knowledge of the code and regulations" who can "validate the claims made by the tool", reads maps and parcels, and understands technical regulatory language. That this person is on Cover's own design team (rather than a client's) comes from the brief's "speed up the design team's ability to assess property buildability". *(guess: in-house; confirm.)*
+**A Cover design architect (or engineer) who knows the zoning code and building regulations, working on a residential lot in the City of Los Angeles at the start of, and during, a project.** The brief names the initial target user as "an Architect or Engineer with knowledge of the code and regulations" who can "validate the claims made by the tool", reads maps and parcels, and understands technical regulatory language. That this person is on Cover's own design team (rather than a client's) comes from the brief's "speed up the design team's ability to assess property buildability". **[A-1]**
 
-Their job at this point is to decide what can realistically be built on the site before design effort, pricing and timelines are committed. They are responsible for noticing what a parcel's zoning, overlays and other rules allow, and for not promising a client something the city will refuse. *(guess: how they do this today, which tools and sources they open, how long it takes.)*
+Their job at this point is to decide what can realistically be built on the site before design effort, pricing and timelines are committed. They are responsible for noticing what a parcel's zoning, overlays and other rules allow, and for not promising a client something the city will refuse. How they do this today is **[A-2]**: they look the parcel up in ZIMAS, read the zoning code and any overlay or specific-plan documents, and write up the result by hand.
 
 **Not the target user:** a homeowner or client reading the answer directly; a sales or intake person who needs a quick yes/no and cannot check the citations (the brief requires that the user can validate the claims, which excludes them for now); a city plan checker.
 
@@ -22,7 +22,7 @@ Their job at this point is to decide what can realistically be built on the site
 
 ## 2. The problem, in numbers
 
-There are no figures for this problem from Cover. The brief says the process is "slow and manual due to fragmented regulatory research" and that it creates uncertainty affecting "early design exploration, client conversations, pricing, and timelines", and sets "reduce regulatory research effort to zero" as a goal. It gives no hours, frequency or cost of a surprise. *(guess: all of it; asked in the meeting questions.)*
+There are no figures for this problem from Cover. The brief says the process is "slow and manual due to fragmented regulatory research" and that it creates uncertainty affecting "early design exploration, client conversations, pricing, and timelines", and sets "reduce regulatory research effort to zero" as a goal. It gives no hours, frequency or cost of a surprise. **[A-3]**
 
 What the public sources do show, about how the research is structured:
 
@@ -38,7 +38,7 @@ LADBS issues correction sheets for single-family and duplex plans and for ADUs, 
 
 The engine enters two moments of the architect's work: the first answer about a parcel, and the re-answer when the project changes. It does not try to replace permitting, plan check, or the architect's judgement; the goal is to put correct, sourced constraints in front of them in the minutes where a wrong assumption would shape the design, not to save the most hours overall.
 
-**Reason 1: the cost of a wrong early assumption lands later.** Early design, pricing and client expectations rest on what the lot allows (brief). If the assumption is wrong, it surfaces at plan check [4]. *(guess: how often and how expensive; unquantified.)*
+**Reason 1: the cost of a wrong early assumption lands later.** Early design, pricing and client expectations rest on what the lot allows (brief). If the assumption is wrong, it surfaces at plan check [4]. How often and how expensive is unquantified **[A-3]**.
 
 **Reason 2: the answer is spread across rules that interact.** Base zone, overlays, specific plans and ADU state law each constrain the same lot [1][3]. That they must be combined is documented; how error-prone it is for Cover is not.
 
@@ -49,7 +49,7 @@ Permit submission, plan-check correction responses, structural, energy and civil
 
 ---
 
-## 4. Workflow: where the engine enters the day *(guess: all of it)*
+## 4. Workflow: where the engine enters the day **[A-2]**
 
 **Monday, 9:30 AM.** Dana, a Cover design architect, has just been handed a new lead: a single-story house on a lot in Los Angeles. The client wants an ADU behind it.
 
@@ -73,10 +73,10 @@ Permit submission, plan-check correction responses, structural, energy and civil
 | **Input** | The address or APN and the building type. Nothing else. |
 | **What they need to see** | The parcel and any existing buildings on a map; the constraints that apply to that building type on that lot; for each constraint, where it came from (which source and which passage); which constraints are read straight from parcel and zoning data and which are the tool's interpretation of ambiguous text; how confident the tool is in each; and what it could not determine. |
 | **What they do with it** | Decide whether the lot can take what the client wants, what to tell the client, and what to confirm with the city. The tool does not make the decision. |
-| **Time available** | *(guess: unknown; to ask.)* |
+| **Time available** | She is at her desk starting a project and will read the answer, but not wait minutes for it: assumed up to about ten seconds before it feels broken **[A-4]**. |
 | **Must never** | State an interpretation as if it were a verified fact. Give an answer with no source she can check. Look equally sure when it is not. Present a rule as complete when it covered only part of the lot's regulations. |
 
-**Why this shape, not ZIMAS plus the municipal code:** An architect who knows the code can already do this by hand, and a lookup of the zone and its numeric standards (height, setbacks, lot coverage) is deterministic and a rule table could return it. The product has to earn its place on what a table can't: (1) much of the governing text is prose spread across the code, overlays and specific plans, and applying it to one lot means reading and combining passages, which is the "regulatory ingestion and synthesis" the brief names as the core; (2) where the text is ambiguous or incomplete, a table has nothing to say, while the architect needs the reasonable readings laid out and kept apart from verified constraints; (3) the same answer must come out the same way for every parcel, with citations, which hand research cannot promise. This depends on how much of Cover's real research is prose-reading versus lookup *(guess; asked in the meeting questions)*. If it is nearly all lookup, the value is speed and citations, not synthesis, and the shape should be reconsidered.
+**Why this shape, not ZIMAS plus the municipal code:** An architect who knows the code can already do this by hand, and a lookup of the zone and its numeric standards (height, setbacks, lot coverage) is deterministic and a rule table could return it. The product has to earn its place on what a table can't: (1) much of the governing text is prose spread across the code, overlays and specific plans, and applying it to one lot means reading and combining passages, which is the "regulatory ingestion and synthesis" the brief names as the core; (2) where the text is ambiguous or incomplete, a table has nothing to say, while the architect needs the reasonable readings laid out and kept apart from verified constraints; (3) the same answer must come out the same way for every parcel, with citations, which hand research cannot promise. This depends on how much of Cover's real research is prose-reading versus lookup **[A-5]**. If it is nearly all lookup, the value is speed and citations, not synthesis, and the shape should be reconsidered.
 
 ---
 
@@ -88,27 +88,27 @@ Permit submission, plan-check correction responses, structural, energy and civil
 | **Input** | The parcel already open and the changed project detail. |
 | **What they need to see** | What changed in the answer, which constraints now bind that did not before, and the same sourcing and confidence as UC-1. |
 | **What they do with it** | Decide whether the changed design is still allowed, and tell the client. |
-| **Time available** | *(guess: asked in the middle of a client conversation or while designing; unknown.)* |
+| **Time available** | Often asked during a client conversation or while designing, so she expects the answer to update about as fast as UC-1: assumed up to about ten seconds **[A-4]**. |
 | **Must never** | Silently keep an old answer after an input changed. Present the new answer without saying what it replaced. |
 
-**Why this shape, not a fixed report:** A report is accurate for one set of inputs and goes stale the moment the project changes; the architect would redo the research each time. A rule table can recompute numeric limits for the new inputs, and the tool should not claim more than that for those. What a table can't do is re-read the prose rules that depend on the new details (an ADU's rules differ from a guest house's) and show the architect what moved. This case weakens if, in Cover's real projects, the inputs that change are mostly ones that only move numeric limits *(guess)*.
+**Why this shape, not a fixed report:** A report is accurate for one set of inputs and goes stale the moment the project changes; the architect would redo the research each time. A rule table can recompute numeric limits for the new inputs, and the tool should not claim more than that for those. What a table can't do is re-read the prose rules that depend on the new details (an ADU's rules differ from a guest house's) and show the architect what moved. This case weakens if, in Cover's real projects, the inputs that change are mostly ones that only move numeric limits **[A-6]**.
 
 ---
 
 ## 6. The minimum product
 
-**First iteration.** An architect would open this on a Tuesday to get, for a lot in the City of Los Angeles, a cited and confidence-marked list of the constraints on a single-family home, ADU or guest house, with the parcel on a map, and to change a few project details and see the answer update. If it covered a handful of rules well, with every claim checkable, the architect would still use it; if its claims could not be checked, they would not. *(guess; to confirm.)*
+**First iteration.** An architect would open this on a Tuesday to get, for a lot in the City of Los Angeles, a cited and confidence-marked list of the constraints on a single-family home, ADU or guest house, with the parcel on a map, and to change a few project details and see the answer update. If it covered a handful of rules well, with every claim checkable, the architect would still use it; if its claims could not be checked, they would not. **[A-7]**
 
 | # | Feature | Use case | What it does for the user | Acceptable in v1 |
 |---|---|---|---|---|
-| 1 | Enter an address or APN and a building type | UC-1 | Starts an assessment for a lot | *(to ask)*: address/APN must resolve to the right parcel |
-| 2 | Parcel and existing-building map | UC-1 | Lets her see the lot she is asking about | *(to ask)* |
-| 3 | List of applicable constraints for a small set of rules | UC-1 | Gives the constraints that apply | Fewer rules is acceptable if each is correct *(from brief: "small, well-reasoned subset")* |
-| 4 | Citation and derivation for each constraint | UC-1 | Lets her check it against the code | Every constraint has a source she can open *(guess)* |
-| 5 | Deterministic versus interpreted label, plus confidence | UC-1 | Shows what to trust and what to check | Distinction always present *(from brief)* |
-| 6 | Change a few project details and re-answer | UC-2 | Keeps the answer current | *(to ask: how long she'd wait)* |
+| 1 | Enter an address or APN and a building type | UC-1 | Starts an assessment for a lot | The address or APN must resolve to the right parcel; a wrong parcel is worse than no answer |
+| 2 | Parcel and existing-building map | UC-1 | Lets her see the lot she is asking about | Outline and buildings are enough; setback drawings are later |
+| 3 | List of applicable constraints for a small set of rules | UC-1 | Gives the constraints that apply | Fewer rules is acceptable if each is correct (brief: "small, well-reasoned subset"); assumed set: zone, height, setbacks, lot coverage, floor area, ADU size and the overlays that flag a lot **[A-8]** |
+| 4 | Citation and derivation for each constraint | UC-1 | Lets her check it against the code | Every constraint has a source she can open |
+| 5 | Deterministic versus interpreted label, plus confidence | UC-1 | Shows what to trust and what to check | Distinction always present (brief) |
+| 6 | Change a few project details and re-answer | UC-2 | Keeps the answer current | Up to about ten seconds **[A-4]** |
 
-**Later iterations,** in the order the brief suggests (to confirm with the user's order):
+**Later iterations,** in the order the brief lists them (the order is the builder's assumption **[A-9]**):
 
 | # | Feature | Use case | What it adds for the user | Why not first |
 |---|---|---|---|---|
@@ -137,15 +137,15 @@ Permit submission, plan-check correction responses, structural, energy and civil
 
 | Constraint | What it is | Given by |
 |---|---|---|
-| Timeline | 1 week for the proof of concept. Date, time and time zone not stated *(to ask)*. What to drop first if half done: *(to ask)* | The brief |
-| Team | *(to ask: Michael, alone?)* | |
+| Timeline | 1 week for the proof of concept. Start and end dates are not stated, so "1 week from start" is the only deadline. If half done, drop the bonus items first and keep the sourced, labelled assessment **[A-10]** | The brief |
+| Team | One builder (Michael) **[A-10]** | The user |
 | Services / vendors | Python backend, JavaScript/TypeScript frontend (required); AWS preferred, GCP may be needed for geocoding; everything else is up to the builder. The PRD's "inferred" items (React, FastAPI, LangChain, OpenAI) are not mandates | The brief, the PRD |
 | Geography | Residential parcels in the City of Los Angeles | The brief |
 | Data | Public parcel, zoning and regulatory information, "or reasonable mock data if needed"; more specific resources "will be provided before the project starts" *(not yet received)* | The brief |
 | Deliverables | Source code, technical documentation, demo video, test results; an architecture diagram showing how it could be productionized; tested on a range of provided parcels and building types | The brief, the PRD |
-| Intended use | Proof of concept for Cover; commercial use later is possible but *(to ask)* | |
+| Intended use | Proof of concept for Cover, internal use. Assumed not sold as a product **[A-11]** | |
 
-Spend, hardware and regulatory/contractual rows are deleted because they were not asked.
+Spend, hardware and regulatory/contractual rows are deleted because nothing was handed over on them.
 
 ---
 
@@ -157,6 +157,28 @@ Spend, hardware and regulatory/contractual rows are deleted because they were no
 - The ADU statutory timelines [3] come from a third-party site and should be checked against the statute.
 - The consultancy breakdown [5] is not used because its data cannot be verified.
 - Nothing here measures whether the engine improves outcomes for Cover.
+
+---
+
+## 10. Assumptions we are proceeding on
+
+There will be no meeting with Cover, so these replace the questions that would have been asked. They are best guesses, not findings. The last column says what changes if the guess is wrong.
+
+| ID | Assumption | If wrong |
+|---|---|---|
+| A-1 | The user is a Cover in-house design architect or engineer, not a client or sales person. | If it is sales or clients, the "must be able to validate" condition fails and plain-language summaries move to the minimum. |
+| A-2 | Today the architect looks up the parcel in ZIMAS, reads the zoning code and overlay or specific-plan documents, and writes up the result by hand, per project. | UC-1 and the workflow change shape. |
+| A-3 | The research is slow and its errors are costly, as the brief says, but there is no number. | Reasons 1 and 2 weaken; the business case rests on the brief's word. |
+| A-4 | About ten seconds is the longest an answer can take before it feels broken. The brief says only "real-time". | Sets the performance requirement. Ask for a real number if one ever turns up. |
+| A-5 | A substantial part of the research is reading prose across the code and overlays, not just looking up numbers. | If it is nearly all lookup, the value is speed and citations; the "why this shape" argument in UC-1 collapses to that. |
+| A-6 | In practice, the inputs that change mid-project include things whose rules are in prose (building type, attached or detached, bedrooms), not only numeric limits. | UC-2 may not need this product and could be dropped. |
+| A-7 | An architect would still use a first iteration that handled a handful of rules correctly with citations; one with uncheckable claims would not be used. | The minimum is wrong. |
+| A-8 | The first rule set is zone, height, setbacks, lot coverage, floor area, ADU size and overlay flags. | Swap the rules; the rest stays. |
+| A-9 | The order of later iterations follows the brief's bonus list. | Reorder. |
+| A-10 | One builder, one week, bonus items dropped first. | Changes the size of the minimum. |
+| A-11 | Internal proof of concept; not sold. | Commercial use would require checking the licences of every data source and model used. |
+
+The earlier question list (`MEETING_QUESTIONS.md`) is superseded by this table and has been removed.
 
 ---
 
