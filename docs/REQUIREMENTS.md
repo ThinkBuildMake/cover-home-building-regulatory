@@ -106,6 +106,7 @@ If a row below names a library, a component or a way of meeting a threshold, it 
 |---|---|---|---|---|
 | DE-1 | If the geocoder fails or times out, the user is told within 5 s [prop] and no parcel is guessed. | Fault injection: geocoder returns error and delays | UC-1, U§6 | Must |
 | DE-2 | Every answer states the date of the data snapshot it used; 100% of answers carry it. | Assert on all eval outputs | UC-1 | Must |
+| DE-6 | A data snapshot older than 30 days [prop] is flagged on screen in 100% of answers that use it. | Test with an aged snapshot | DE-2, KEY_METRICS | Should |
 | DE-3 | If the language-model service is unavailable, the deterministic constraints are still returned within PF-1 and the interpreted ones are listed as not determined with reason "interpretation unavailable". | Fault injection: model calls fail | UC-1, UC-2 | Gate |
 | DE-4 | A clean machine runs the system and the eval suite from the README in ≤ 30 min [prop]. | Timed run on a fresh container | U§8 | Should |
 | DE-5 | Each run records the language-model name and version and the prompt version [prop]. | Log query on 100% of runs | UC-1 | Must |
@@ -138,6 +139,7 @@ If a row below names a library, a component or a way of meeting a threshold, it 
 | FR-2.6 | Each constraint shows a confidence signal. | UC-1 | Must |
 | FR-2.7 | Where the text is ambiguous, she sees the reasonable readings laid out, apart from verified constraints. | UC-1 | Must |
 | FR-2.8 | She sees a list of rules in the rule set that could not be determined, each with a reason. | UC-1 | Gate |
+| FR-2.10 | She marks each constraint "confirmed" or "wrong", and can change the mark. Free-text feedback is not in v1 (LI-1). | UC-1, UC-2, KEY_METRICS | Must |
 | FR-2.9 | The answer states that it covers only the rule set and is not the full set of regulations on the lot. | UC-1 | Gate |
 
 ### FR-3 Change the project (UC-2)
@@ -154,7 +156,7 @@ If a row below names a library, a component or a way of meeting a threshold, it 
 
 | ID | Requirement | Trace | Priority |
 |---|---|---|---|
-| FR-4.1 | Not in v1: feedback on bad answers (LI-1), drawn setbacks and annotations (LI-2), chat (LI-3), admin pipeline view (LI-4), other jurisdictions (LI-5). | U§6 | Must |
+| FR-4.1 | Not in v1: free-text feedback on bad answers (LI-1; the confirmed/wrong mark in FR-2.10 is in v1), drawn setbacks and annotations (LI-2), chat (LI-3), admin pipeline view (LI-4), other jurisdictions (LI-5). | U§6 | Must |
 | FR-4.2 | The tool states constraints. It does not say a design is approved, allowed or rejected. | U§7 | Must |
 
 ---
@@ -202,6 +204,7 @@ If a row below names a library, a component or a way of meeting a threshold, it 
 | ID | Requirement | Verified by | Trace | Priority |
 |---|---|---|---|---|
 | OB-1 | For 100% of answers a record is kept of: inputs, data snapshot, model and prompt versions, cited passage identifiers, and timestamps. Replaying a record reproduces the deterministic values. | Replay 10 records and diff | UC-1, UC-2 | Must |
+| OB-4 | Citation opens, input changes and confirmed/wrong marks are each recorded as events tied to the answer identifier for 100% of occurrences. | Perform each action 10 times and query the log | FR-2.10, KEY_METRICS | Must |
 | OB-2 | Elapsed time per request is recorded for 100% of requests, with a breakdown by stage. | Log query | PF-1, PF-2 | Should |
 | OB-3 | Model and cloud cost per request is recorded for 100% of requests. | Log query | CO-1 | Should |
 
@@ -253,6 +256,7 @@ If a row below names a library, a component or a way of meeting a threshold, it 
 | DE | ● | ● | | U§5, U§6 |
 | FR-1, FR-2 | ● | | | U§5, U§6 |
 | FR-3 | | ● | | U§5 |
+| FR-2.10 | ● | ● | LI-1 (partial) | KEY_METRICS |
 | FR-4 | | | LI-1 to LI-5 | U§6, U§7 |
 | VR | ● | ● | | U§5 "must never" |
 | PF | ● | ● | | A-4 |
@@ -271,6 +275,7 @@ Every **[prop]** and **[tbd]** number. Status is *accepted*, *revised*, or *pend
 |---|---|---|---|
 | DE-1 | Geocoder failure reported ≤ 5 s | Half the shared budget; leaves time to retry or show an error | draft |
 | DE-4 | Clean install ≤ 30 min | A reviewer should not give up before seeing it run | draft |
+| DE-6 | Snapshot older than 30 days flagged | Zoning and parcel data change slowly, so a month is stale enough to warn; the real change rate is unknown | draft |
 | DE-5 | Model and prompt version recorded | Needed to reproduce an interpreted answer | draft |
 | VR-3 | 100% deterministic match | A table lookup has no excuse for an error | draft |
 | VR-5 | ≥ 90% cited passage supports the claim | Interpreted rules are fuzzier; below 90% an architect would stop trusting citations | draft |

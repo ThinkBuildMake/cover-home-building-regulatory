@@ -1,6 +1,6 @@
 # KEY_METRICS.md — Home Building Regulatory Engine
 
-**Status:** draft. The success sentence below is the builder's proposal and has not been agreed with the user.
+**Status:** draft. The success sentence is agreed with the user.
 
 ## What success means
 
@@ -39,8 +39,7 @@ Success means the architect starts from the engine's cited answer and checks it,
 
 ## Upstream fixes and open questions
 
-- Add a functional requirement to `REQUIREMENTS.md`: the architect can mark each constraint "confirmed" or "wrong". The success metric and the VR-6 guarantee both need it. It overlaps with later iteration #1 (feedback), so the simple mark moves into v1 and the free-text feedback stays later.
-- Add a functional requirement to `REQUIREMENTS.md` that opening a citation and changing an input are recorded as events.
+- Done in `REQUIREMENTS.md`: the confirmed/wrong mark (FR-2.10), event recording (OB-4) and a snapshot-age flag (DE-6).
+- DE-6 flags old data but is not tracked as a metric. A limit on how stale data may be is still open.
 - CO-1 and VR-6 thresholds are still [tbd]; they are set after the first full eval run. Their rows above use the interim values.
-- Data going stale can drift without a code change, but DE-2 only requires showing the snapshot date. Add a maximum snapshot age to `REQUIREMENTS.md`; until then there is no metric for it.
 - The success target waits on 4 weeks of data.
