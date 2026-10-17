@@ -21,8 +21,10 @@ Under A-8 the rule set is: building type permitted, zone, height, setbacks, lot 
 | Parcel type | Treatment in v1 |
 |---|---|
 | Chapter 1 zones RE, RS, R1 (and R2) outside Hillside and Coastal areas | Full answer |
-| Same zones inside a Hillside Ordinance area | Answer with the slope-band floor-area table if slope can be computed; otherwise list floor area as not determined |
-| Parcel with an HPOZ, specific plan, Q or D condition, CPIO or other overlay | Show the overlay flag as a constraint, state that its rules override the base zone, and list the overlay's own limits as not determined unless the plan is ingested |
+| Same zones inside a Hillside Ordinance area | Answer with the slope-band floor-area table, using slope estimated from public elevation data and labelled "estimate, not a stamped Slope Analysis Map" (§3a) |
+| Parcel with a Q, T or D marker in its zone string | Detect it, show the ordinance number and effective date, link the ordinance PDF, and list the actual caps as not determined unless that ordinance has been entered by hand (§3a) |
+| Parcel with an HPOZ, specific plan, CPIO or other overlay | Show the overlay flag as a constraint, state that its rules override the base zone, and list the overlay's own limits as not determined unless the plan is ingested |
+| Parcel inside the Coastal Zone | Detect it from the Coastal Commission layer, state that a Coastal Development Permit applies, show the height and floor-area figures from the City summary, and list who issues the permit and the Venice sub-area as not determined (§3a) |
 | Chapter 1A zone strings (bracketed) | Return "unsupported in v1" with the reason |
 | RD and other multi-family zones | Return "unsupported in v1" (GC-6 already excludes non-residential parcels; this is a further cut and needs the user's agreement) |
 
@@ -39,13 +41,37 @@ All endpoints below were queried live on 2026-10-17 with no key. Counts are what
 | Address to point | City address points, `data.lacity.org/resource/4ca8-mxuh.json` | 1,045,947 rows, daily refresh, fields `hse_nbr`, `str_nm`, `str_sfx_cd`, `zip_cd`, `lat`, `lon` | Socrata query; no key | read; **CC0** |
 | Existing buildings | LARIAC 2020 building outlines (County), `services.arcgis.com/RmCCgQtiZLDCtblq/.../Countywide_Building_Outlines_(2020)/FeatureServer/0` | 3,293,177 outlines with `HEIGHT`, `AREA`; no address or APN, so join by location | Query and bulk download | read; licence points to a County terms page that was not read |
 | Overlay flags | HPOZ (36), specific plan areas (61), community design overlay (19), CPIO (9), Hillside Ordinance area (344), hillside grading area (7), Very High Fire Hazard zones (14), Residential Floor Area districts, Neighborhood Stabilization overlay | Mostly name-only flags | Query by point | read (service URLs in the working notes, to be copied into `ARCHITECTURE.md`) |
-| Coastal Zone | none found among City layers | | | **missing**; California Coastal Commission data is unverified |
-| Q and D conditions | not found as a layer | They live in per-parcel ordinance text and in ZIMAS | | **missing** |
+| Coastal Zone | California Coastal Commission, `services9.arcgis.com/wwVnNW92ZHUIr0V0/arcgis/rest/services/VIEW_Local_Coastal_Program_Segments/FeatureServer/0` | 370 polygons, edited 2026-09-04; the segment name for each City of LA coastal area | Query by point | read (§3a); the Commission's licence requires an "illustrative purposes only" statement on derived products |
+| Q, T and D conditions | the zone string itself, plus City "Zoning Archive" layer (`services5.../Zoning_Archive/FeatureServer/2`) | markers on every polygon; ordinance number and effective date on most Q polygons | Query by point | read (§3a); the text of each condition is in an ordinance PDF, not in data |
+| Elevation (for slope) | USGS 3D Elevation Program, `elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer` | 1 m ground elevation, public domain | Point query and tile export | read (§3a) |
 | Permit history | LADBS permit datasets on `data.lacity.org` | useful later; not needed in v1 | | unverified |
 
 **ZIMAS.** The City's parcel lookup tool appears to sit on these same public services. No page we read says automated use is allowed, and the terms sit behind a script. Treat it as a manual cross-check only and ask City Planning before any automated use.
 
 **Dataset size.** About 0.9M City parcels (the earlier design assumed about 1M parcels and buildings; the real count is 0.9M parcels plus about 1.1M to 3.3M outlines depending on source). Still small for one database.
+
+## 3a. The three data gaps, followed up
+
+Three agents re-ran the gaps found in the first pass. Everything below was queried or downloaded on 2026-10-17.
+
+**Slope (for the Hillside floor-area table).**
+- **What the City accepts.** From the 2010 draft of the Hillside ordinance (the adopted wording was not read): a "Slope Analysis Map" signed by a licensed surveyor, with contours at 10 ft or finer. So the engine's number can only be a pre-screen, never the official one.
+- **Source that works.** The USGS 3D Elevation Program serves 1 m ground elevation without a key, and its "terms" are the USGS statement that its data is public domain. No City elevation or contour layer exists. The County contour layer returned unclipped lines and was not usable; the 2020 LiDAR is restricted to university users (search snippet, not opened).
+- **Test.** For one Hillside-area parcel near Mulholland Drive the agent downloaded the tile, computed slope with numpy, and picked pixels inside the parcel with Shapely. Mean slope was 46.8% against 46.1% from the service's own slope output. The six bands agreed closely except the 100%-and-over band (518 vs 302 sq ft). It was not compared with a surveyor's map. Expected accuracy ("several percentage points per band") is an estimate, not measured.
+- **Gotchas.** A point query must pass the spatial reference or it returns no data. The vertical datum is not stated in the service. Tiles from before 2024 are coarser.
+
+**Q, T and D conditions.**
+- **Detection.** Every zone string shows them: `(Q)` or `[Q]` prefix, `(T)` prefix, and D inside the height district (for example `[Q]R1-1D-HCR`). In the City layer, 4.8% of R1, RS and RE polygons carry one (about 3% for Q alone), 28.7% of RD polygons and 3.0% of R2. These counts are by polygon, not by parcel, and come from the agent's own parsing. ArcGIS reads `[Q]` as a wildcard, so the string must be parsed in code.
+- **Ordinance link.** The City "Zoning Archive" layer has an ordinance number and effective date for most Q polygons (431 of 819 marked R1/RS/RE polygons in one field, 382 in the other, 18 Q-marked R1 polygons with neither). What the two field names mean is a guess.
+- **Text.** One real ordinance was read (Northeast LA Hillsides, Ord. 180,403): height 30 ft, or 26 ft if the roof slope is under 25%; a slope-band floor-area formula with a 20%-of-lot or 1,000 sq ft floor; prose design standards; Zoning Administrator adjustments of up to 20% on height and 10% on floor area; and earlier conditions retained from older ordinances, so one parcel can be under several. A prose-only Q ordinance was not sampled.
+- **Engine behaviour.** Detect the marker, show the ordinance number and date, link the PDF, and list the actual limits as not determined unless that ordinance has been entered by hand. The agent estimates a day or two to enter the most common ordinances for the test parcels.
+
+**Coastal Zone.**
+- **Source.** No City layer exists. The California Coastal Commission publishes one that answers by point: coastal zone boundary and "local coastal programme segments" (370, edited 2026-09-04; 14 are City of LA segments such as Venice, Pacific Palisades and San Pedro). The City's specific-plan layer also flags the Venice Coastal Zone and the Coastal Transportation Corridor. Test points in Venice and Pacific Palisades hit; Van Nuys and Encino did not. The agent used coordinates, not geocoded addresses.
+- **Terms.** The Commission's boundary layer says it is not the official boundary and requires derived products to say so ("shown for illustrative purposes only"). The answer must carry that statement.
+- **Rules read.** In the City summary: height 45 ft for lots in the Coastal Zone outside Hillside areas; floor area 3:1 in Height District 1; one extra foot of side yard per story above the second. Venice's own specific plan sets height by sub-area (for example 30 ft flat roof / 35 ft varied in North Venice; 28 ft on walk streets) in prose, and the sub-area boundaries are exhibit images.
+- **Not available:** no layer for who issues the permit (City, Commission or both); the Venice sub-area; the base floor-area number for R1, RS and RE in the Coastal Zone (it cites LAMC 12.21.1 A, unread); the Mello Act statute text; LAMC 12.20.2. The code may have moved sections under Chapter 1A.
+- **Engine behaviour.** Detect the coastal segment, state that a Coastal Development Permit applies, show the figures above with their sources, print the Commission's statement, and list who issues the permit, the Venice sub-area and the coastal floor-area number as not determined.
 
 ## 4. Base rules for house lots (Chapter 1)
 
@@ -127,9 +153,9 @@ The official LAMC publisher blocks automated access, and its bulk-use terms were
 1. The controlling LAMC text for 12.08, 12.07, 12.21 C.10 and 12.22 A.33 from an official source, and the signed Ord. 184,802.
 2. Whether any ordinance after 2019 amended A.33 (none seen).
 3. Whether a separate guest-house rule exists in current code.
-4. How to compute slope for the Hillside floor-area table (needs elevation data, not audited).
-5. Where Q and D conditions can be read per parcel.
-6. A Coastal Zone data source.
+4. Whether the City accepts an estimated slope as a screening figure; the adopted ordinance text on slope bands; the vertical datum of the elevation data (§3a).
+5. What the two ordinance-number fields in the Zoning Archive layer mean, and prose-only Q ordinances (§3a).
+6. Who issues a Coastal Development Permit for a given lot, the Venice sub-area, LAMC 12.20.2 and 12.21.1 A (§3a).
 7. The County terms of use (parcels and building outlines).
 8. Whether City Planning allows automated ZIMAS use; ask its data-requests contact.
 9. Google geocoding price and storage terms (only if used).
@@ -156,4 +182,7 @@ The official LAMC publisher blocks automated access, and its bulk-use terms were
 - State Government Code 66313–66333 on a secondary site: `california.public.law/codes/government_code_section_66323` (same pattern for other sections)
 - LAMC Chapter 1 text on a third-party mirror: `gocodebook.com/library/us/ca/los-angeles-planning/chapter-i-general-provisions-and-zoning/article-2-specific-planning-zoning-comprehensive-zoning-plan/`
 - LA Conservancy page on the mansionization ordinance: `laconservancy.org/save-places/issues/mansionization-and-teardowns-city-of-los-angeles-ordinance/`
+- USGS 3D Elevation Program image service: `elevation.nationalmap.gov/arcgis/rest/services/3DEPElevation/ImageServer`; City Planning 2010 draft Hillside ordinance: `planning.lacity.gov/Code_Studies/BaselineHillsideOrd/ProposedBHOrdProvisions.pdf`
+- Ordinance 180,403 (Northeast LA Hillsides, Q and D conditions): `cityclerk.lacity.org/onlinedocs/2008/08-2599_ord_180403.pdf`; City "Zoning Archive" layer on `services5.arcgis.com/7nsPwEMP38bSkCjy`
+- California Coastal Commission layers on `services9.arcgis.com/wwVnNW92ZHUIr0V0`; Venice Coastal Zone Specific Plan: `planning.lacity.gov/odocument/b76ef566-6a24-4603-a5cc-e040af8646c4/Venice_Coastal_Zone_Specific_Plan.pdf`
 - Census geocoder, Nominatim policy and Pelias documentation (geocoding options), and Google Maps Platform pricing and usage pages (price per thousand not found).
