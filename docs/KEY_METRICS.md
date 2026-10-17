@@ -6,26 +6,27 @@
 
 The user is a Cover design architect who today looks up a parcel in ZIMAS, reads the code and overlay documents, and writes the result up by hand (`USERS.md` §1, A-2). There is no baseline for how long or how error-prone this is; Cover supplied no figures (`USERS.md` §2, A-3).
 
-Success means the architect starts from the engine's cited answer and checks it, instead of redoing the research by hand, because she has found its claims to be right.
+Success means Cover's architects answer their parcel questions with the engine instead of researching them by hand.
 
-## Success metric: Assessments the architect did not mark wrong
+## Success metric: Parcels assessed per week
 
-**What is it?** The share of reviewed assessments in which no constraint was marked wrong. A reviewed assessment is one where the architect marked at least one constraint "confirmed" or "wrong".
+**What is it?** The number of distinct parcels that Cover architects run an assessment on each week. A parcel counts once per week, however many times the inputs are changed on it.
 
-**How we measure it.** From the per-constraint "confirmed / wrong" marks the product records. Formula: reviewed assessments with 0 constraints marked wrong ÷ all reviewed assessments, per week. This needs a user action the requirements do not have yet (see upstream fixes).
+**How we measure it.** Count of distinct parcel identifiers with at least one completed assessment in the week, from the answer records (OB-1). No manual counts.
 
-**Target.** No baseline exists, so the target is set after 4 weeks of use. Until then the number is only watched.
+**Target.** No baseline exists for how many parcels Cover researches by hand (`USERS.md` §2, A-3), so the target is set after 4 weeks of data.
 
-**Why it shows the need was met.** An architect who marks constraints "confirmed" is relying on the answer rather than redoing the work. One who keeps marking them "wrong" is not. It measures whether the answers deserve trust, not whether the page was opened.
+**Why it shows the need was met.** Each parcel assessed is a parcel the architect did not research by hand, which is the problem in `USERS.md` §2. It counts the work the engine took over, not clicks on a feature.
 
-**What it can't tell you.** It counts only what the architect chose to mark, and she may not catch a wrong constraint; an unmarked error looks like success.
+**What it can't tell you.** It counts use, not correctness: a wrong tool would still be used for a while. The first supporting metric below covers that gap.
 
 ### Supporting metrics
 
 | Metric | What it is | Recorded from | Why it explains the success metric |
 |---|---|---|---|
-| **Assessments with a citation opened** | Share of assessments where she opens at least one citation | Citation-open events | If the success metric looks good but this is low, nobody is checking and the number is not trustworthy. |
-| **Assessments followed by a changed input** | Share of assessments where she changes a project input on the same parcel (UC-2) | Input-change events | If it is low, UC-2 is not being used, and the "re-answer" half of the product is not serving the need (A-6). |
+| **Assessments with a constraint marked wrong** | Share of reviewed assessments where she marked at least one constraint "wrong" (FR-2.10) | Confirmed/wrong marks (OB-4) | If parcels per week falls and this rose, architects stopped trusting the answers. |
+| **Assessments with a citation opened** | Share of assessments where she opens at least one citation | Citation-open events (OB-4) | If parcels per week is steady but this is low, nobody is checking the answers. |
+| **Assessments followed by a changed input** | Share of assessments where she changes a project input on the same parcel (UC-2) | Input-change events (OB-4) | If it is low, the re-answer half of the product is not being used (A-6). |
 
 ## Guarantee metrics
 
@@ -43,3 +44,4 @@ Success means the architect starts from the engine's cited answer and checks it,
 - DE-6 flags old data but is not tracked as a metric. A limit on how stale data may be is still open.
 - CO-1 and VR-6 thresholds are still [tbd]; they are set after the first full eval run. Their rows above use the interim values.
 - The success target waits on 4 weeks of data.
+- FR-2.10 and OB-4 stay in `REQUIREMENTS.md`: the wrong-mark share and the VR-6 guarantee use them.
