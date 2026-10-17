@@ -1,6 +1,6 @@
 # KEY_METRICS.md — Home Building Regulatory Engine
 
-**Status:** draft. The success sentence is agreed with the user.
+**Status:** draft. The success metric was changed to a direct count at the user's request; the new success sentence awaits confirmation.
 
 ## What success means
 
