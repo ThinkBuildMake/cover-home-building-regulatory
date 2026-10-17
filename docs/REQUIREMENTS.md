@@ -92,10 +92,12 @@ If a row below names a library, a component or a way of meeting a threshold, it 
 | GC-2 | If only half is built, the sourced, labelled assessment (FR-1, FR-2) exists before any bonus item: feedback, setback geometry, chat, admin view [src U§8, A-10]. | Build order review at the midpoint | U§8, A-10 | Must |
 | GC-3 | One builder; no row requires an operations team or on-call [src U§8]. | Review of deployment steps for manual ops work | U§8 | Should |
 | GC-4 | Backend is Python; frontend is JavaScript or TypeScript [src U§8]. | Repository language check | U§8 | Must |
+| GC-4a | The PRD's "Other Requirements" lists PostgreSQL, PostGIS and Shapely for geospatial processing; the brief calls them recommended. Parcel geometry is processed with a documented geospatial toolchain, and any departure from those three is recorded with its reason in the technical docs [src PRD, brief]. | Review of the technical docs | U§8 | Should |
 | GC-5 | AWS is the default cloud; GCP is used only for geocoding; any other cloud service is recorded with its reason [src U§8]. | Review of the services list in the technical docs | U§8 | Should |
 | GC-6 | Only residential parcels inside the City of Los Angeles are assessed. All other parcels (outside the city, non-residential) return an explicit "unsupported" outcome in 100% of test cases [src U§8, U§7]. | 6 test inputs: 3 outside the city, 3 non-residential | U§7, U§8 | Must |
 | GC-7 | Data is public, or mock data that is labelled as such. Every datum an answer uses is tagged real or mock (see VR-8) [src U§8]. | Source inventory in the docs | U§8 | Must |
 | GC-8 | The five deliverables exist at submission: source code, technical documentation, demo video, test results, an architecture diagram showing productionization [src U§8]. | Checklist at submission | U§8 | Must |
+| GC-10 | The PRD marks AI-usage documentation optional; a short note on where AI was used in building this is included in the technical docs [src PRD]. | Present in the docs | PRD | Should |
 | GC-9 | The licence of every data source and model used is recorded; the use is internal only [src U§8, A-11]. | Source inventory shows a licence entry for 100% of sources | A-11 | Should |
 
 ### 1.2 Dependencies and environment (DE-)
@@ -237,6 +239,7 @@ If a row below names a library, a component or a way of meeting a threshold, it 
 |---|---|---|---|---|
 | CH-1 | A new rule can be added to the rule set with 0 changes to the output schema (CT-1) and 0 changes to the UI code. | Add one held-back rule as a test | LI-5 | Should |
 | CH-2 | 100% of constraints and sources carry a jurisdiction identifier, so a second jurisdiction can coexist with LA. | Schema check (CT-1) | LI-5 | Should |
+| CH-5 | The architecture diagram (GC-8) shows how the same design extends from LA City to LA County and other regions [src PRD "scalable architecture"]. | Diagram review at submission | LI-5 | Must |
 | CH-3 | 100% of answers and constraints have a stable identifier retrievable from the record in OB-1, so feedback and chat can refer to them. | Retrieve 10 random constraints by identifier | LI-1, LI-3 | Should |
 | CH-4 | 100% of setback constraints give distance, units and which lot side (front, side, rear), so they can later be drawn on the map. | Schema check on setback constraints | LI-2 | Should |
 
