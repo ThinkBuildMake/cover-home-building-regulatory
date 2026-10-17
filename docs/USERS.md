@@ -71,7 +71,7 @@ Permit submission, plan-check correction responses, structural, energy and civil
 |---|---|
 | **Trigger** | She enters an address or APN for a lot in the City of Los Angeles and picks a building type (single-family home, ADU, guest house). |
 | **Input** | The address or APN and the building type. Nothing else. |
-| **What they need to see** | The parcel and any existing buildings on a map; the constraints that apply to that building type on that lot; for each constraint, where it came from (which source and which passage); which constraints are read straight from parcel and zoning data and which are the tool's interpretation of ambiguous text; how confident the tool is in each; and what it could not determine. |
+| **What they need to see** | The parcel and any existing buildings on a map; a clear statement of whether that building type is permitted on the lot and the headline limits (the brief's "what is allowed"); the constraints that apply to that building type on that lot; for each constraint, where it came from (which source and which passage); which constraints are read straight from parcel and zoning data and which are the tool's interpretation of ambiguous text; how confident the tool is in each; and what it could not determine. |
 | **What they do with it** | Decide whether the lot can take what the client wants, what to tell the client, and what to confirm with the city. The tool does not make the decision. |
 | **Time available** | She is at her desk starting a project and will read the answer, but not wait minutes for it: assumed up to about ten seconds before it feels broken **[A-4]**. |
 | **Must never** | State an interpretation as if it were a verified fact. Give an answer with no source she can check. Look equally sure when it is not. Present a rule as complete when it covered only part of the lot's regulations. |
@@ -103,7 +103,7 @@ Permit submission, plan-check correction responses, structural, energy and civil
 |---|---|---|---|---|
 | 1 | Enter an address or APN and a building type | UC-1 | Starts an assessment for a lot | The address or APN must resolve to the right parcel; a wrong parcel is worse than no answer |
 | 2 | Parcel and existing-building map | UC-1 | Lets her see the lot she is asking about | Outline and buildings are enough; setback drawings are later |
-| 3 | List of applicable constraints for a small set of rules | UC-1 | Gives the constraints that apply | Fewer rules is acceptable if each is correct (brief: "small, well-reasoned subset"); assumed set: zone, height, setbacks, lot coverage, floor area, ADU size and the overlays that flag a lot **[A-8]** |
+| 3 | Buildability summary and list of applicable constraints for a small set of rules | UC-1 | States whether the building type is permitted and the headline limits, then gives the constraints that back them | Fewer rules is acceptable if each is correct (brief: "small, well-reasoned subset"); assumed set: whether the building type is permitted, zone, height, setbacks, lot coverage, floor area, ADU size and the overlays that flag a lot **[A-8]** |
 | 4 | Citation and derivation for each constraint | UC-1 | Lets her check it against the code | Every constraint has a source she can open |
 | 5 | Deterministic versus interpreted label, plus confidence | UC-1 | Shows what to trust and what to check | Distinction always present (brief) |
 | 6 | Change a few project details and re-answer | UC-2 | Keeps the answer current | Up to about ten seconds **[A-4]** |
@@ -128,7 +128,7 @@ Permit submission, plan-check correction responses, structural, energy and civil
 | Jurisdictions outside the City of Los Angeles in the first iteration | The brief limits the proof of concept to residential parcels in the city |
 | Non-residential parcels | The brief limits scope to residential parcels |
 | Permit submission or plan-check corrections | Different work at a different moment (Section 3) |
-| Telling the architect what to design or approving a design | The architect makes the decision; the tool gives the constraints |
+| Telling the architect what to design, or saying a specific drawn design is approved or will pass plan check | The architect makes the decision. The tool states what the rules allow for the lot and building type, with the constraints behind it |
 | Serving clients or sales staff directly | The brief requires a user who can validate the claims |
 
 ---
@@ -173,7 +173,7 @@ There will be no meeting with Cover, so these replace the questions that would h
 | A-5 | A substantial part of the research is reading prose across the code and overlays, not just looking up numbers. | If it is nearly all lookup, the value is speed and citations; the "why this shape" argument in UC-1 collapses to that. |
 | A-6 | In practice, the inputs that change mid-project include things whose rules are in prose (building type, attached or detached, bedrooms), not only numeric limits. | UC-2 may not need this product and could be dropped. |
 | A-7 | An architect would still use a first iteration that handled a handful of rules correctly with citations; one with uncheckable claims would not be used. | The minimum is wrong. |
-| A-8 | The first rule set is zone, height, setbacks, lot coverage, floor area, ADU size and overlay flags. | Swap the rules; the rest stays. |
+| A-8 | The first rule set is whether the building type is permitted on the parcel, zone, height, setbacks, lot coverage, floor area, ADU size and overlay flags. | Swap the rules; the rest stays. |
 | A-9 | The order of later iterations follows the brief's bonus list. | Reorder. |
 | A-10 | One builder, one week, bonus items dropped first. | Changes the size of the minimum. |
 | A-11 | Internal proof of concept; not sold. | Commercial use would require checking the licences of every data source and model used. |

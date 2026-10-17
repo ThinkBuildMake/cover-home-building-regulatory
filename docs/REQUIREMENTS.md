@@ -33,6 +33,7 @@ If a row below names a library, a component or a way of meeting a threshold, it 
 2. All of `USERS.md` A-1 to A-11 carry forward. No meeting with Cover is possible, so several numbers here (notably the 10 s latency, A-4) are the builder's proposals, not Cover's.
 3. The proof of concept is used by a small internal group with no login or per-user permissions. This removes an authorization group. If real client data or external users appear, one must be added.
 4. The "range of provided parcels" in the brief has not been received. The eval set in EV-1 is built by the builder and should be replaced or extended when Cover's parcels arrive.
+5. The Cover brief (`docs/Cover - Home Building Regulatory Engine.pdf`) and the PRD (`docs/Portal PRD.md`) are the source of truth. Where `USERS.md` or an earlier draft of this document differed from them, they govern; section 0a records each such change.
 
 **Definitions.**
 
@@ -40,7 +41,9 @@ If a row below names a library, a component or a way of meeting a threshold, it 
 |---|---|
 | Assessment | The full result for one parcel, one building type and one set of project inputs: the constraint list, the not-determined list, the map. |
 | Constraint | One rule's outcome for the parcel and building type (e.g. "rear setback 15 ft"), with value, units, citations, derivation, label and confidence. The unit that is cited, labelled and graded. |
-| Rule set | The rules the engine evaluates in v1: zone, height, setbacks, lot coverage, floor area, ADU size, overlay flags (A-8). |
+| Rule set | The rules the engine evaluates in v1: whether the building type is permitted on the parcel, zone, height, setbacks, lot coverage, floor area, ADU size, overlay flags (A-8). |
+| Rule fragment | One rule from the regulatory text stored in structured form (topic, building types, parameters, jurisdiction) and tied to the source passage it was taken from. The unit that ingestion produces. |
+| Buildability summary | The block at the top of an answer that states, for the chosen building type, whether it is permitted on the parcel and the headline limits. It repeats values from the constraints below it and adds none. |
 | Deterministic | A constraint whose value is computed from parcel/zoning data and a numeric rule with no language model in the path. Tested by VR-2. |
 | Interpreted | A constraint whose value depends on a language model's reading of prose. Always shown apart from deterministic ones. |
 | Confidence signal | A displayed indicator, per constraint, of how far to trust it, with at least three levels (high, medium, low). |
@@ -57,7 +60,10 @@ If a row below names a library, a component or a way of meeting a threshold, it 
 
 | Area | Headline threshold |
 |---|---|
+| What is allowed | Every answer opens with a buildability summary: building type permitted or not, and the headline limits, each traced to a constraint |
 | Honesty | 100% of constraints cited, labelled, with confidence; 0 wrong-parcel answers; every gap named |
+| Ingestion | 100% of rules in the rule set stored as structured fragments tied to a source passage and checked by hand against it |
+| Usability | A first-time target user completes an assessment and opens a citation unaided in ≤ 2 min, in 3 of 3 trials |
 | Correctness | 100% deterministic values match hand-checked truth on the eval set |
 | Speed | p95 ≤ 10 s for first answer and for re-answer [prop (U§5 A-4)] |
 | Failure | Any single dependency failing gives a named partial answer or explicit error, never a silent gap |
@@ -77,8 +83,11 @@ If a row below names a library, a component or a way of meeting a threshold, it 
 | 3 | An unresolved or ambiguous parcel yields no answer rather than a best guess | Always return the closest match (U§6: wrong parcel is worse than none) | FR-1.3, VR-4 |
 | 4 | A partial answer with named gaps beats failing whole when a dependency is down | All-or-nothing answers | RL-1, DE-3 |
 | 5 | One shared 10 s budget for first answer and re-answer | Separate looser budget for UC-2 (U§5 gives both the same) | PF-1, PF-2 |
-| 6 | The tool states constraints and never a verdict on the design | "Allowed / not allowed" output (U§7: architect decides) | FR-4.2 |
+| 6 | The tool states what the rules allow for the lot and building type (permitted or not, and the limits). It does not say a specific design is approved or will pass plan check | No statement of what is allowed (brief: "a clear statement of what is allowed"); or an approve/reject verdict on a drawn design (U§7: architect decides). This reverses the earlier "constraints only" wording | FR-2.11, FR-4.2, VR-12 |
 | 7 | Mock data is allowed but every datum is tagged real or mock | Silent mock data (handoff: must be clear) | VR-8 |
+| 8 | Regulatory ingestion into structured, cited rule fragments is a requirement of its own | Treating ingestion as build detail (brief: "core focus") | IN-1 to IN-3, FR-2.4 |
+| 9 | Re-answering as inputs change stays in v1 although the brief lists it as a bonus | Dropping it (PRD impact metric: "real-time buildability answers as inputs change") | FR-3, GC-2 |
+| 10 | Usability of the screen is a requirement, not a styling matter | Leaving it to the builder's judgement (brief must-have: "easily see the outputs") | UX-1 |
 
 ---
 
@@ -89,7 +98,7 @@ If a row below names a library, a component or a way of meeting a threshold, it 
 | ID | Requirement | Verified by | Trace | Priority |
 |---|---|---|---|---|
 | GC-1 | The proof of concept is delivered within 1 week of start [src U§8]. | Delivery date against start date | U§8 | Must |
-| GC-2 | If only half is built, the sourced, labelled assessment (FR-1, FR-2) exists before any bonus item: feedback, setback geometry, chat, admin view [src U§8, A-10]. | Build order review at the midpoint | U§8, A-10 | Must |
+| GC-2 | If only half is built, the order is: the brief's must-haves first (FR-1, FR-2, the map, the eval set, the architecture diagram, the five deliverables), then FR-3 (a brief bonus kept because the PRD lists it as an impact metric), then the other bonus items: feedback beyond the confirmed/wrong mark, setback geometry, chat, admin view [src U§8, A-10, brief]. | Build order review at the midpoint | U§8, A-10 | Must |
 | GC-3 | One builder; no row requires an operations team or on-call [src U§8]. | Review of deployment steps for manual ops work | U§8 | Should |
 | GC-4 | Backend is Python; frontend is JavaScript or TypeScript [src U§8]. | Repository language check | U§8 | Must |
 | GC-4a | Parcel geometry is stored and processed with PostgreSQL, PostGIS and Shapely, as listed in the PRD's "Other Requirements" (the brief calls them recommended; the builder adopts them) [src PRD, user decision]. | Review of the technical docs and repository dependencies | U§8 | Must |
@@ -99,6 +108,7 @@ If a row below names a library, a component or a way of meeting a threshold, it 
 | GC-8 | The five deliverables exist at submission: source code, technical documentation, demo video, test results, an architecture diagram showing productionization [src U§8]. | Checklist at submission | U§8 | Must |
 | GC-10 | The PRD marks AI-usage documentation optional; a short note on where AI was used in building this is included in the technical docs [src PRD]. | Present in the docs | PRD | Should |
 | GC-9 | The licence of every data source and model used is recorded; the use is internal only [src U§8, A-11]. | Source inventory shows a licence entry for 100% of sources | A-11 | Should |
+| GC-11 | A current large language model is used for regulatory synthesis: reading prose for interpreted constraints and extracting rule fragments from text [src brief "use the latest in LLM/AI/ML"]. | The technical docs name the model and each place it is used | Brief | Must |
 
 ### 1.2 Dependencies and environment (DE-)
 
@@ -125,7 +135,8 @@ If a row below names a library, a component or a way of meeting a threshold, it 
 | FR-1.2 | She sees which parcel was resolved (address and APN) alongside the answer, so she can confirm it is the lot she meant. | UC-1, U§6 | Must |
 | FR-1.3 | If the input matches no parcel or more than one, she is told so, and shown the candidates when there are several. No assessment is shown until one parcel is chosen. | UC-1, U§6 | Gate |
 | FR-1.4 | If the parcel is outside the City of Los Angeles or not residential, she is told it is unsupported and why. | U§7 | Must |
-| FR-1.5 | She sees the parcel outline and existing buildings on a map. | UC-1 | Must |
+| FR-1.5 | She sees the parcel outline and existing buildings on a map. If no existing building is recorded for the parcel, the map says so. | UC-1, brief | Must |
+| FR-1.6 | The resolved parcel and its map appear as soon as the parcel is found, before the assessment finishes. | UC-1, PF-3 | Should |
 
 ### FR-2 Read the constraints (UC-1)
 
@@ -134,13 +145,14 @@ If a row below names a library, a component or a way of meeting a threshold, it 
 | FR-2.1 | She sees a list of constraints for the chosen building type on that parcel, covering the rule set. | UC-1, A-8 | Must |
 | FR-2.2 | Each constraint shows its value and units, and which building type it applies to. | UC-1 | Must |
 | FR-2.3 | Each constraint has a citation she can open to the source passage. | UC-1 | Gate |
-| FR-2.4 | Each constraint shows its derivation: the parcel data and rule it came from. | UC-1 | Must |
+| FR-2.4 | Each constraint shows its derivation: the parcel data, the structured rule fragment applied, and the source text that fragment was taken from. | UC-1, brief | Must |
 | FR-2.5 | Each constraint is labelled deterministic or interpreted, and the two kinds are visually separated. | UC-1 | Gate |
 | FR-2.6 | Each constraint shows a confidence signal. | UC-1 | Must |
-| FR-2.7 | Where the text is ambiguous, she sees the reasonable readings laid out, apart from verified constraints. | UC-1 | Must |
+| FR-2.7 | Where the text is ambiguous or incomplete, she sees the reasonable readings (decision paths) laid out, apart from verified constraints, each with its source and what would settle it. | UC-1, brief | Must |
 | FR-2.8 | She sees a list of rules in the rule set that could not be determined, each with a reason. | UC-1 | Gate |
 | FR-2.10 | She marks each constraint "confirmed" or "wrong", and can change the mark. Free-text feedback is not in v1 (LI-1). | UC-1, UC-2, KEY_METRICS | Must |
 | FR-2.9 | The answer states that it covers only the rule set and is not the full set of regulations on the lot. | UC-1 | Gate |
+| FR-2.11 | The answer opens with a buildability summary for the chosen building type: whether that type is permitted on this parcel (permitted, not permitted, or not determined) and the headline limits (height, setbacks, floor area, and ADU size where it applies). Each item links to the constraint below that backs it. | UC-1, brief, PRD | Must |
 
 ### FR-3 Change the project (UC-2)
 
@@ -148,7 +160,7 @@ If a row below names a library, a component or a way of meeting a threshold, it 
 |---|---|---|---|
 | FR-3.1 | On the open parcel she changes project inputs (building type, attached/detached, bedrooms, bathrooms, footprint/floor area) without re-entering the parcel. | UC-2 | Must |
 | FR-3.2 | The answer updates for the new inputs. | UC-2 | Must |
-| FR-3.3 | She sees what changed: constraints whose value changed, and constraints that now apply or no longer apply. | UC-2 | Must |
+| FR-3.3 | She sees what changed compared with the answer that was on screen: constraints whose value changed, and constraints that now apply or no longer apply. | UC-2 | Must |
 | FR-3.4 | While a new answer is pending, the previous one is visibly marked out of date. | UC-2 | Gate |
 | FR-3.5 | The new answer carries the same citations, labels, confidence and not-determined list as FR-2. | UC-2 | Must |
 
@@ -157,13 +169,13 @@ If a row below names a library, a component or a way of meeting a threshold, it 
 | ID | Requirement | Trace | Priority |
 |---|---|---|---|
 | FR-4.1 | Not in v1: free-text feedback on bad answers (LI-1; the confirmed/wrong mark in FR-2.10 is in v1), drawn setbacks and annotations (LI-2), chat (LI-3), admin pipeline view (LI-4), other jurisdictions (LI-5). | U§6 | Must |
-| FR-4.2 | The tool states constraints. It does not say a design is approved, allowed or rejected. | U§7 | Must |
+| FR-4.2 | The tool states what the rules allow for the lot and building type. It does not say that a specific design is approved or will pass plan check. | U§7, brief | Must |
 
 ---
 
 ## 3. Non-functional requirements
 
-*Columns: ID · Requirement · Verified by · Trace · Priority. Groups absent: Authorization (Assumption 3, no login), Compliance and data handling (public parcel data only; licences are in GC-9), Deployment (covered by DE-4 and GC-8).*
+*Columns: ID · Requirement · Verified by · Trace · Priority. Sections 3.9 (ingestion) and 3.10 (usability) were added after checking this document against the brief. Groups absent: Authorization (Assumption 3, no login), Compliance and data handling (public parcel data only; licences are in GC-9), Deployment (covered by DE-4 and GC-8).*
 
 ### 3.1 Verification / correctness (VR-)
 
@@ -180,6 +192,7 @@ If a row below names a library, a component or a way of meeting a threshold, it 
 | VR-9 | After any input change, the displayed answer matches the current inputs in 100% of tested change sequences; 0 cases of an old answer shown as current [src U§5]. | Scripted sequences of ≥ 10 changes, including rapid successive changes | FR-3.4 | Gate |
 | VR-10 | The change summary equals the set difference between old and new answers in 100% of ≥ 10 eval pairs. | Eval pairs with expected diffs | FR-3.3 | Must |
 | VR-11 | The same inputs give identical deterministic values in 10 of 10 repeated runs; interpreted values agree with each other in ≥ 90% of repeated runs [prop]. | Repeat each eval case 10 times | U§5 consistency | Must |
+| VR-12 | In 100% of eval outputs, every value in the buildability summary equals the value of the constraint it links to. A summary item is labelled deterministic only if every constraint behind it is deterministic, and shows the lowest confidence among them [prop]. | Automated check on every eval output | FR-2.11 | Gate |
 
 ### 3.2 Performance (PF-)
 
@@ -196,7 +209,7 @@ If a row below names a library, a component or a way of meeting a threshold, it 
 | ID | Requirement | Verified by | Trace | Priority |
 |---|---|---|---|---|
 | RL-1 | When any one dependency (geocoder, data source, model) is made to fail, 100% of cases return either an explicit error or a partial answer that names each missing part; 0 cases return an answer with a silent gap [src U§5]. | Fault injection on each dependency across 5 eval cases | FR-2.8 | Gate |
-| RL-2 | Every request ends in an answer or an error within 30 s [prop (3 × PF-1)]. | Fault injection with stalled dependencies | UC-1, UC-2 | Must |
+| RL-2 | Every request ends in an answer or an error within 30 s [prop (3 × PF-1)]. An error names the stage that failed or was still running. | Fault injection with stalled dependencies | UC-1, UC-2 | Must |
 | RL-3 | A request that fails leaves the previously displayed answer clearly marked as out of date, never as current. | UI test after a forced failure | FR-3.4 | Must |
 
 ### 3.4 Observability (OB-)
@@ -236,7 +249,23 @@ If a row below names a library, a component or a way of meeting a threshold, it 
 | SC-1 | Supports 5 users asking at once with p95 within PF-1 [prop (internal team size)]. | Load test with 5 parallel sessions | UC-1 | Should |
 | SC-2 | Any residential parcel in the City of Los Angeles can be assessed with 0 parcel-specific code or configuration: ≥ 5 parcels not used during development produce valid assessments with 0 code changes [src brief: scale beyond sample parcels]. | Hold-out run | GC-6 | Must |
 
-### 3.9 Change and later iterations (CH-)
+### 3.9 Regulatory ingestion (IN-)
+
+*The brief names ingestion and synthesis as the core focus: turning municipal zoning text into structured, explainable rule fragments.*
+
+| ID | Requirement | Verified by | Trace | Priority |
+|---|---|---|---|---|
+| IN-1 | 100% of rules in the rule set exist as structured rule fragments, each with a topic, the building types it covers, parameters, a jurisdiction identifier and the identifier of the source passage it was taken from [src brief]. | Query of the rule store; schema check | FR-2.4, VR-1 | Gate |
+| IN-2 | One command rebuilds the rule store and the passage store from the stored source documents on a clean checkout, and the rebuilt rules equal the committed ones in 100% of fragments (no hidden manual edits). | Rebuild and diff on a fresh container | GC-8, DE-4 | Must |
+| IN-3 | The builder checks 100% of rule fragments against their source passage before the fragment is used, and each fragment records how it was made (read from a table, or extracted by the language model) and that it was checked [prop]. | Query: fragments without a checked flag = 0 | FR-2.4, VR-5 | Must |
+
+### 3.10 Usability (UX-)
+
+| ID | Requirement | Verified by | Trace | Priority |
+|---|---|---|---|---|
+| UX-1 | A person who has not seen the tool, given only the README, enters a parcel, picks a building type, reads the buildability summary and opens one citation within 2 minutes, in 3 of 3 trials [prop (brief: "easily see the outputs")]. | Three timed walkthroughs by people other than the builder | FR-1, FR-2 | Must |
+
+### 3.11 Change and later iterations (CH-)
 
 | ID | Requirement | Verified by | Trace | Priority |
 |---|---|---|---|---|
@@ -263,6 +292,9 @@ If a row below names a library, a component or a way of meeting a threshold, it 
 | RL, OB | ● | ● | | U§5 |
 | CT, EV | ● | ● | | U§8 |
 | CO, SC | ● | | | A-11, brief |
+| FR-2.11, VR-12 | ● | ● | | brief, PRD |
+| IN | ● | ● | LI-5 | brief scope |
+| UX | ● | ● | | brief must-have |
 | CH | | | LI-1 to LI-5 | U§6 |
 
 ---
@@ -281,6 +313,9 @@ Every **[prop]** and **[tbd]** number. Status is *accepted*, *revised*, or *pend
 | VR-5 | ≥ 90% cited passage supports the claim | Interpreted rules are fuzzier; below 90% an architect would stop trusting citations | draft |
 | VR-6 | High confidence accurate ≥ [tbd] (interim 90%) | Depends on how the confidence signal is built | pending prototype |
 | VR-11 | 10/10 deterministic; ≥ 90% interpreted | Brief asks for consistency across parcels; the model adds variation | draft |
+| VR-12 | Summary equals constraints in 100%; weakest label and confidence carried up | A summary that is surer than its parts would break the honesty rule | draft |
+| IN-3 | 100% of fragments checked by hand | The rule set is small, so a full check is affordable and the brief stresses traceability | draft |
+| UX-1 | 2 minutes, 3 of 3 trials | "Easily see the outputs" has no number in the brief; two minutes is a guess at what an architect would accept before giving up | draft |
 | PF-1, PF-2 | p95 ≤ 10 s | The brief says "real-time" with no number; 10 s from A-4 | draft |
 | PF-3 | Map ≤ 3 s | Something appears quickly, so the wait feels shorter | draft |
 | RL-2 | 30 s hard stop | 3 × PF-1 | draft |

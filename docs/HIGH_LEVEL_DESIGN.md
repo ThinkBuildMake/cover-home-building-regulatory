@@ -6,7 +6,7 @@
 
 - **Load:** about 5 architects now (SC-1), at most about 20 at the horizon (12 months) **[assumed]**. Peak is 5 assessments in flight, about 0.5 completed per second. About 100 assessments a day now. About 20 reads per write. About 2 GB of answer records per year plus about 3 GB of source data.
 - **Design:** one web client, one app server, one database with a spatial extension, object storage for the source documents, and an offline ingestion job. Two outside services are called while answering: a geocoder and a language model. Nothing else.
-- **Wireframe:** [Assessment screen](https://claude.ai/artifact/BD6AcHx4gZj6Sp5GW1NaFR), clickable: start, loading, several parcels, no match, unsupported, geocoder down, took over 30 s, answer (deterministic and interpreted constraints, ambiguous readings, could-not-determine list, map, project inputs, what changed), out of date, partial answer. The link is private to the owner until shared.
+- **Wireframe:** [Assessment screen](https://claude.ai/artifact/BD6AcHx4gZj6Sp5GW1NaFR), clickable: start, loading, several parcels, no match, unsupported, geocoder down, took over 30 s, answer (buildability summary, deterministic and interpreted constraints, ambiguous readings, could-not-determine list, map with existing buildings, project inputs, what changed), out of date, partial answer. The link is private to the owner until shared.
 - **Next as it grows:** a stored table of interpretation results, then a second app instance. Triggers are in §5. The language model, not our servers, is what limits speed and cost.
 - **Cost:** about $350/month now and about $1,200/month at the horizon, at about $0.08 per assessment. No total budget was given, only CO-1 (interim $0.25 per assessment) (§6).
 
@@ -82,11 +82,11 @@ Peak is 0.5 assessments/s now and 1/s at the horizon. One app server handles hun
 | Zone | A zoning designation | code, area outline | applies to Parcels | Rebuildable | thousands |
 | Overlay | An overlay or specific plan | name, area outline, source | applies to Parcels | Rebuildable | hundreds |
 | Jurisdiction | The city or county that owns rules | id, name | owns Rules and sources | Rebuildable | 1 now (CH-2) |
-| Rule | One rule in the rule set | topic, kind (numeric or prose), building types it covers, jurisdiction | has Passages | Rebuildable, versioned | tens |
+| Rule (a rule fragment, IN-1) | One rule in the rule set in structured form, tied to its source | topic, kind (numeric or prose), building types it covers, parameters, jurisdiction, how it was made (table or model), checked by hand yes/no (IN-3) | backed by Passages | Rebuildable from the stored sources (IN-2), versioned | tens |
 | SourceDocument | A stored copy of a code or overlay document | title, date, location, licence, real or mock | has Passages | Rebuildable, versioned | tens |
 | Passage | A citable piece of a source | document, section, text, stable id | belongs to a SourceDocument; backs Rules and Citations | Rebuildable, versioned | thousands |
 | DataSnapshot | A dated copy of the data used | id, date, per-source real or mock tag | referenced by Assessments | Keep | a few |
-| Assessment | The full result for one parcel, building type and inputs | inputs, snapshot, model and prompt versions, timings, cost, created | for a Parcel; revises another Assessment; has Constraints | Keep | about 36k/year now; 150k/year at the horizon |
+| Assessment | The full result for one parcel, building type and inputs, including the buildability summary (FR-2.11) | inputs, snapshot, model and prompt versions, timings, cost, created, summary items each pointing at a Constraint | for a Parcel; revises another Assessment; has Constraints | Keep | about 36k/year now; 150k/year at the horizon |
 | Constraint | One rule's outcome inside an Assessment | rule, value, units, building type, label, confidence, derivation, stable id | has Citations; may have a Mark | Keep | about 8 per Assessment |
 | NotDetermined | A rule the engine could not resolve | rule, reason | belongs to an Assessment | Keep | about 2 per Assessment |
 | Citation | Link from a Constraint to a Passage | passage, order | Constraint to Passage | Keep | about 2 per Constraint |
@@ -144,7 +144,7 @@ config:
 ---
 flowchart LR
   client[Web client] -->|resolveParcel, runAssessment, reviseAssessment, getPassage, markConstraint, getAssessment| app[App server]
-  builder[Builder, by command] -->|ingestDatasets, ingestRegulations, checkSnapshot| ingest[Ingestion job]
+  builder[Builder, by command] -->|ingestDatasets, ingestRegulations, checkRules, checkSnapshot| ingest[Ingestion job]
   builder -->|runEval| evalr[Eval runner]
   ci[CI] -->|runEval| evalr
   evalr -->|runAssessment, reviseAssessment, with faults injected| app
@@ -159,7 +159,7 @@ flowchart LR
 | Operation | Called by | Input | Output | R/W | Latency class | Sync / async | Serves |
 |---|---|---|---|---|---|---|---|
 | `resolveParcel` — `POST /parcels/resolve` | Web client, Eval runner | address or APN | one parcel with outline and buildings; or candidates; or "no match"; or "unsupported" with reason; or a named error | R | ≤ 3 s for the map, error ≤ 5 s | sync | I-1, FR-1.1–1.5, DE-1, GC-6 |
-| `runAssessment` — `POST /assessments` | Web client, Eval runner | parcel id, building type, project inputs | Assessment: constraints, ambiguous readings, not-determined list, snapshot date and flags (old, mock), answer id | R + W (answer record) | ≤ 10 s | sync | I-2, FR-2.1–2.9, PF-1 |
+| `runAssessment` — `POST /assessments` | Web client, Eval runner | parcel id, building type, project inputs | Assessment: buildability summary (building type permitted or not, headline limits), constraints each with derivation (parcel data, rule fragment, source text), ambiguous readings, not-determined list, snapshot date and flags (old, mock), answer id | R + W (answer record) | ≤ 10 s | sync | I-2, FR-2.1–2.11, PF-1 |
 | `reviseAssessment` — `POST /assessments/{id}/revisions` | Web client, Eval runner | previous answer id, changed inputs | new Assessment plus the change summary against the previous one | R + W | ≤ 10 s | sync | I-3, FR-3.1–3.5, PF-2 |
 | `getPassage` — `GET /passages/{id}` | Web client | passage id, answer id | source name, section, passage text, link to the document | R | ≤ 1 s | sync; records a citation-open event | I-4, FR-2.3, OB-4 |
 | `markConstraint` — `PUT /constraints/{id}/mark` | Web client | confirmed, wrong, or cleared | the current mark | W | ≤ 1 s | sync; records the event | I-5, FR-2.10, OB-4 |
@@ -180,7 +180,8 @@ Runs by hand on the builder's command, never inside a request (the stage budget 
 | Operation | Called by | Input | Output | R/W | Latency class | Sync / async | Serves |
 |---|---|---|---|---|---|---|---|
 | `ingestDatasets` | Builder (command) | dataset locations | Parcels, buildings, zones, overlays loaded; a new DataSnapshot with real or mock tags | W | minutes | batch | I-6, DE-2, GC-7, VR-8 |
-| `ingestRegulations` | Builder (command) | regulation documents | stored SourceDocuments, split into Passages with stable ids; Rules with numeric parameters where the text is a table or number | W | minutes to hours | batch | I-6, VR-1, CH-1, CH-2 |
+| `ingestRegulations` | Builder (command) | regulation documents | stored SourceDocuments, split into Passages with stable ids; Rules (structured fragments) taken from tables and numbers directly or extracted from prose by the model, each tied to its passage and marked unchecked. Rerunning on the stored documents rebuilds the same Rules | W | minutes to hours | batch | I-6, IN-1, IN-2, VR-1, CH-1, CH-2 |
+| `checkRules` | Builder (command) | rule ids | each Rule shown beside its source passage; the builder marks it checked | R + W | minutes | batch | IN-3 |
 | `checkSnapshot` | Builder (command) | snapshot id | counts and a list of missing data; licence entry per source | R | seconds | batch | GC-9, DE-2 |
 
 ### 4.3 Eval runner
@@ -206,7 +207,7 @@ Runs by hand on the builder's command, never inside a request (the stage budget 
 - **Start an assessment:** address or APN box, building type (single-family home, ADU, guest house), and an Assess button. Empty state explains what she will get.
 - **Loading:** shows "resolved the parcel" as soon as it is done, with the map, then "reading the rules". States that a request ends in an answer or an error within 30 s.
 - **Several parcels match / no match / unsupported / geocoder down / took over 30 s:** each is a named message. Several matches show candidates and no assessment until one is chosen. Errors say which stage failed and offer retry.
-- **Answer:** resolved parcel (address and APN, snapshot date), scope notice (7 rules, not the full regulations, no verdict), deterministic constraints and interpreted constraints in separate blocks, each with value, building type, label, confidence, a citation, a derivation and confirmed/wrong buttons; ambiguous readings apart from verified constraints; the could-not-determine list with reasons; map; project inputs (structure, bedrooms, bathrooms, footprint); a "what changed" block after a revision.
+- **Answer:** resolved parcel (address and APN, snapshot date), a buildability summary (is this building type permitted here, and the headline limits, each linking to its constraint), scope notice (8 rules, not the full regulations, no approval of a specific design), deterministic constraints and interpreted constraints in separate blocks, each with value, building type, label, confidence, a citation, a derivation and confirmed/wrong buttons; ambiguous readings apart from verified constraints; the could-not-determine list with reasons; map; project inputs (structure, bedrooms, bathrooms, footprint); a "what changed" block after a revision.
 - **Banners on the answer:** out of date (while updating or after a failure), partial answer (model unavailable), old data (snapshot over 30 days), mock data in use.
 
 ### App server
@@ -223,7 +224,7 @@ Runs by hand on the builder's command, never inside a request (the stage budget 
 
 ### Ingestion job
 
-**Why it exists:** loading datasets and reading hundreds of pages of regulation cannot fit in a 10 s request, and DE-2 needs every answer to name the snapshot it used. **Holds / does:** I-6 above; run by hand, one machine, no queue. **Provided by platform:** no. It is the part that grows with jurisdictions (CH-5), see the table below.
+**Why it exists:** the brief names turning zoning text into structured, explainable rule fragments as the core focus (IN-1). Loading datasets and reading hundreds of pages of regulation also cannot fit in a 10 s request, and DE-2 needs every answer to name the snapshot it used. **Holds / does:** I-6 above; run by hand, one machine, no queue. **Provided by platform:** no. It is the part that grows with jurisdictions (CH-5), see the table below.
 
 ### Geocoder (external)
 
@@ -248,6 +249,33 @@ The first thing to break is the model stage, then availability. The path beyond 
 | Separate search index | The database's text search returns the wrong passages | Cited passage supports the value in under 90% of eval cases (VR-5) after tuning the ranking |
 | Queue and workers for ingestion, one pipeline per jurisdiction | One machine takes too long to ingest LA County or other cities | A full ingestion of one jurisdiction takes over 4 hours, or a second jurisdiction is added (LI-5, CH-2) |
 | Read replica | Reads saturate the database | Database CPU stays above 70% from reads after indexing |
+
+**Production view.** The brief asks for a simple, actionable diagram of how this could be productionized (GC-8, CH-5). This is the input to it: the same boxes as the Summary, grown only by the rows above, with one ingestion pipeline per jurisdiction so LA County and other regions are added without changing the answer path.
+
+```mermaid
+---
+config:
+  layout: elk
+---
+flowchart LR
+  users[Architects] -->|HTTPS, sync| edge[Load balancer and CDN]
+  edge -->|static files| web[Web client]
+  edge -->|API calls, sync| apps[App server instances]
+  apps -->|reads, writes, sync| primary[(Primary database with spatial extension)]
+  primary -->|replication| replica[(Read replica)]
+  apps -->|reads, sync| replica
+  apps -->|source documents, sync| files[(Object storage)]
+  apps -->|reuse interpretations, sync| memo[(Stored interpretation results)]
+  apps -->|geocode, sync| geo[Geocoder]
+  apps -->|interpret, sync, parallel| llm[Language model service]
+  sched[Scheduler] -->|refresh per jurisdiction, async| queue[Queue]
+  queue -->|jobs, async| workers[Ingestion workers, one pipeline per jurisdiction]
+  workers -->|fetch| src[Public data and regulation sources]
+  workers -->|rule fragments, passages, parcels, batch| primary
+  workers -->|source documents, batch| files
+  workers -->|extract rules| llm
+  apps -->|logs, timings, cost| obs[Monitoring and alerts]
+```
 
 Not needed at this scale and not planned: cache service, CDN beyond what the host provides, persistent connections (the screen updates when a request returns), sharding.
 
@@ -274,7 +302,6 @@ The proof of concept itself (one week, a small team, eval runs) will cost a smal
 | **[assumed]** about 1M parcels and buildings in the City | Sizes the database | Count from the dataset (open item 1 in `REQUIREMENTS.md`) |
 | Whether ZIMAS or city data can only be queried live | A live call in the request path adds time and a failure case; the stage budget has no spare 2 s | `REQUIREMENTS.md` open item 3; if live-only, add a stage and re-split the budget |
 | Platform request timeout versus the 30 s stop | Some hosts cut requests before 30 s | `STACK.md` |
-| Upstream fix: add a functional row that the parcel and map appear as soon as the parcel is resolved, before the assessment finishes | The wireframe and the stage budget rely on it; PF-3 only times the map | `REQUIREMENTS.md` FR-1.5 |
-| Upstream fix: RL-1 and RL-2 should say an error names the failed or slow stage | The wireframe's error states show it and `resolveParcel` and `runAssessment` return it | `REQUIREMENTS.md` RL-1, RL-2 |
-| Upstream fix: DE-6 or VR-8 should say a mock-data or old-snapshot banner is shown on the answer | The wireframe has both banners | `REQUIREMENTS.md` DE-6, VR-8 |
-| Upstream fix: FR-3.3 should say the change summary compares with the previous answer on screen | `reviseAssessment` takes the previous answer id | `REQUIREMENTS.md` FR-3.3 |
+| Done in `REQUIREMENTS.md` after checking against the brief: FR-1.6 (map before the assessment finishes), RL-2 (errors name the stage), FR-3.3 (compare with the answer on screen), FR-2.11 and VR-12 (buildability summary), IN-1 to IN-3 (ingestion), UX-1 (usability), GC-11 (language model) | The wireframe and this design rely on them | Done |
+| The summary's "permitted" item may rest on prose, so it can be interpreted and low confidence | VR-12 makes the summary carry the weakest label and confidence behind it; if most parcels show "not determined", the rule set needs a numeric rule for permitted use | First eval run |
+| The architect needs to see the rule fragment and source text in the derivation | FR-2.4 now asks for it; `runAssessment` returns it with each constraint | Done in `REQUIREMENTS.md` |
